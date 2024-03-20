@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <math.h>
 
 #include "raylib.h"
 
@@ -72,11 +73,19 @@ int move_player_inside_trap(Vec2i *player, Rectangle trap,
 {
     int step = speed * delta_time * 100;
 
-    player->x -= step * IsKeyDown(KEY_A);
-    player->x += step * IsKeyDown(KEY_D);
+    int w = IsKeyDown(KEY_W);
+    int a = IsKeyDown(KEY_A);
+    int s = IsKeyDown(KEY_S);
+    int d = IsKeyDown(KEY_D);
 
-    player->y -= step * IsKeyDown(KEY_W);
-    player->y += step * IsKeyDown(KEY_S);
+    if (w + a + s + d >= 2)
+        step *= sin(45);
+
+    player->x -= step * a;
+    player->x += step * d;
+
+    player->y -= step * w;
+    player->y += step * s;
 
     return point_rec_collision(*player, trap);
 }
