@@ -40,7 +40,7 @@ char *cardinal_text[CARDINAL_SIZE] = {
 
 Vec2i screen = {.width = 1344, .height = 756};
 
-const int trap_len = 200;
+const int trap_len = 300;
 Rectangle trap = {
     .width = trap_len,
     .height = trap_len,
@@ -52,7 +52,7 @@ const int player_speed = 5;
 
 Texture map;
 Vector2 map_coord;
-const float map_factor = 100.0f;
+const float map_factor = 2.0f;
 
 void handle_resize_window(void)
 {
@@ -182,7 +182,7 @@ int main(void)
     SetTargetFPS(60);
 
     player = (Vec2i) {.x = screen.width/2, .y = screen.height/2};
-    map = LoadTexture("data/map.png");
+    map = LoadTexture("data/map2.png");
     map_coord = (Vector2){
         screen.width/2 - map.width*map_factor/2,
         screen.height/2 - map.height*map_factor/2,
