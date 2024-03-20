@@ -46,6 +46,7 @@ Rectangle trap = {
     .height = trap_len,
 };
 
+Texture player_t;
 Vec2i player;
 const int player_radius = 25;
 const int player_speed = 5;
@@ -171,6 +172,8 @@ void move_map(Vector2 *map, Cardinal direction, const int speed, const float DT)
         map->y -= diag_step;
         map->x += diag_step;
         break;
+    default:
+        break;
     }
 }
 
@@ -182,6 +185,7 @@ int main(void)
     SetTargetFPS(60);
 
     player = (Vec2i) {.x = screen.width/2, .y = screen.height/2};
+    player_t = LoadTexture("data/player.png");
     map = LoadTexture("data/map2.png");
     map_coord = (Vector2){
         screen.width/2 - map.width*map_factor/2,
@@ -205,7 +209,13 @@ int main(void)
             }
             
             DrawTextureEx(map, map_coord, 0.0f, map_factor, WHITE);
-            DrawCircle(player.x, player.y, player_radius, BLUE);
+            DrawTexture(
+                player_t,
+                player.x-player_t.width/2,
+                player.y-player_t.height/2,
+                WHITE
+            );
+
             // DrawRectangleLinesEx(trap, 1, RED);
         }
         EndDrawing();
