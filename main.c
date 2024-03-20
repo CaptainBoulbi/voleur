@@ -1,9 +1,11 @@
+#include <stdio.h>
+
 #include "raylib.h"
 
 #define MIN(a, b) (a) < (b) ? (a) : (b)
 #define MAX(a, b) (a) > (b) ? (a) : (b)
 
-typedef struct {
+typedef struct Vec2i {
     union {
         int x;
         int width;
@@ -13,6 +15,27 @@ typedef struct {
         int height;
     };
 } Vec2i;
+
+typedef enum Cardinal {
+    CARDINAL_BEGIN_NOT_AT_ZERO = 0,
+    NORD_OUEST, NORD,   NORD_EST,
+    OUEST,              EST,
+    SUD_OUEST,  SUD,    SUD_EST,
+    CARDINAL_SIZE,
+} Cardinal;
+
+#ifndef RELEASE
+char *cardinal_text[CARDINAL_SIZE] = {
+    [NORD_OUEST] = "NORD OUEST",
+    [NORD] = "NORD",
+    [NORD_EST] = "NORD EST",
+    [OUEST] = "OUEST",
+    [EST] = "EST",
+    [SUD_OUEST] = "SUD OUEST",
+    [SUD] = "SUD",
+    [SUD_EST] = "SUD EST",
+};
+#endif
 
 Vec2i screen = {.width = 1344, .height = 756};
 
@@ -44,7 +67,8 @@ int point_rec_collision(Vec2i point, Rectangle rec)
         (point.y >= rec.y && point.y <= rec.y + rec.height);
 }
 
-int move_player_inside_trap(Vec2i *player, Rectangle trap, const int speed, const float delta_time)
+int move_player_inside_trap(Vec2i *player, Rectangle trap,
+                            const int speed, const float delta_time)
 {
     int step = speed * delta_time * 100;
 
@@ -57,10 +81,44 @@ int move_player_inside_trap(Vec2i *player, Rectangle trap, const int speed, cons
     return point_rec_collision(*player, trap);
 }
 
-void snap_player_inside_trap(Vec2i *player, const Rectangle trap)
+Cardinal snap_player_inside_trap(Vec2i *player, const Rectangle trap)
 {
-    player->x = MAX(MIN(player->x, trap.x + trap.width), trap.x);
-    player->y = MAX(MIN(player->y, trap.y + trap.height), trap.y);
+    Cardinal pushing = 0;
+
+    int bound_n = player->y < trap.y;
+    int bound_s = player->y > trap.y + trap.height;
+    int bound_e = player->x > trap.x + trap.width;
+    int bound_o = player->x < trap.x;
+    int bound_ne = bound_n && bound_e;
+    int bound_no = bound_n && bound_o;
+    int bound_se = bound_s && bound_e;
+    int bound_so = bound_s && bound_o;
+
+    if (bound_n) {
+        player->y = trap.y;
+        pushing = NORD;
+    } else if (bound_s) {
+        player->y = trap.y + trap.height;
+        pushing = SUD;
+    }
+    if (bound_e) {
+        player->x = trap.x + trap.width;
+        pushing = EST;
+    } else if (bound_o) {
+        player->x = trap.x;
+        pushing = OUEST;
+    }
+
+    if (bound_ne)
+        pushing = NORD_EST;
+    else if (bound_no)
+        pushing = NORD_OUEST;
+    else if (bound_se)
+        pushing = SUD_EST;
+    else if (bound_so)
+        pushing = SUD_OUEST;
+
+    return pushing;
 }
 
 int main(void)
@@ -78,13 +136,16 @@ int main(void)
         BeginDrawing();
         {
             ClearBackground(BLACK);
-            const float delta_time = GetFrameTime();
+            const float DT = GetFrameTime();
 
             if (IsWindowResized())
                 handle_resize_window();
 
-            if (!move_player_inside_trap(&player, trap, player_speed, delta_time)) {
-                snap_player_inside_trap(&player, trap);
+            if (!move_player_inside_trap(&player, trap, player_speed, DT)) {
+                Cardinal direction = snap_player_inside_trap(&player, trap);
+#ifndef RELEASE
+                printf("[%s]\n", cardinal_text[direction]);
+#endif
             }
             
             DrawCircle(player.x, player.y, player_radius, BLUE);
