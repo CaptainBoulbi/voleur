@@ -50,6 +50,10 @@ Vec2i player;
 const int player_radius = 25;
 const int player_speed = 5;
 
+Texture map;
+Vector2 map_coord;
+const float map_factor = 100.0f;
+
 void handle_resize_window(void)
 {
     Vec2i old_screen = screen;
@@ -59,6 +63,8 @@ void handle_resize_window(void)
     trap.y = screen.height/2 - trap_len/2;
     player.x -= (old_screen.width - screen.width) / 2;
     player.y -= (old_screen.height - screen.height) / 2;
+    map_coord.x -= (old_screen.width - screen.width) / 2;
+    map_coord.y -= (old_screen.height - screen.height) / 2;
 }
 
 int point_rec_collision(Vec2i point, Rectangle rec)
@@ -130,6 +136,44 @@ Cardinal snap_player_inside_trap(Vec2i *player, const Rectangle trap)
     return pushing;
 }
 
+void move_map(Vector2 *map, Cardinal direction, const int speed, const float DT)
+{
+    float step = speed * DT * 100;
+    float diag_step = sin(45) * step;
+
+    switch (direction) {
+    case NORD:
+        map->y += step;
+        break;
+    case SUD:
+        map->y -= step;
+        break;
+    case EST:
+        map->x -= step;
+        break;
+    case OUEST:
+        map->x += step;
+        break;
+
+    case NORD_EST:
+        map->y += diag_step;
+        map->x -= diag_step;
+        break;
+    case NORD_OUEST:
+        map->y += diag_step;
+        map->x += diag_step;
+        break;
+    case SUD_EST:
+        map->y -= diag_step;
+        map->x -= diag_step;
+        break;
+    case SUD_OUEST:
+        map->y -= diag_step;
+        map->x += diag_step;
+        break;
+    }
+}
+
 int main(void)
 {
     SetTraceLogLevel(LOG_ERROR);
@@ -137,9 +181,14 @@ int main(void)
     SetWindowState(FLAG_WINDOW_RESIZABLE);
     SetTargetFPS(60);
 
-    handle_resize_window();
-
     player = (Vec2i) {.x = screen.width/2, .y = screen.height/2};
+    map = LoadTexture("data/map.png");
+    map_coord = (Vector2){
+        screen.width/2 - map.width*map_factor/2,
+        screen.height/2 - map.height*map_factor/2,
+    };
+
+    handle_resize_window();
 
     while (!WindowShouldClose()) {
         BeginDrawing();
@@ -152,13 +201,12 @@ int main(void)
 
             if (!move_player_inside_trap(&player, trap, player_speed, DT)) {
                 Cardinal direction = snap_player_inside_trap(&player, trap);
-#ifndef RELEASE
-                printf("[%s]\n", cardinal_text[direction]);
-#endif
+                move_map(&map_coord, direction, player_speed, DT);
             }
             
+            DrawTextureEx(map, map_coord, 0.0f, map_factor, WHITE);
             DrawCircle(player.x, player.y, player_radius, BLUE);
-            DrawRectangleLinesEx(trap, 1, RED);
+            // DrawRectangleLinesEx(trap, 1, RED);
         }
         EndDrawing();
     }
