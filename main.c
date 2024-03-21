@@ -3,8 +3,11 @@
 
 #include "raylib.h"
 
-#define MIN(a, b) (a) < (b) ? (a) : (b)
-#define MAX(a, b) (a) > (b) ? (a) : (b)
+#define MIN(a, b) ((a) < (b) ? (a) : (b))
+#define MAX(a, b) ((a) > (b) ? (a) : (b))
+#define ABS(a) ((a) < 0 ? -(a) : (a))
+
+#define RAD_TO_DEG(rad) (rad) * (180 / PI)
 
 typedef struct Vec2i {
     union {
@@ -40,11 +43,7 @@ char *cardinal_text[CARDINAL_SIZE] = {
 
 Vec2i screen = {.width = 1344, .height = 756};
 
-const int trap_len = 300;
-Rectangle trap = {
-    .width = trap_len,
-    .height = trap_len,
-};
+Rectangle trap;
 
 Texture player_t;
 Vec2i player;
@@ -60,8 +59,10 @@ void handle_resize_window(void)
     Vec2i old_screen = screen;
     screen.width = GetScreenWidth();
     screen.height = GetScreenHeight();
-    trap.x = screen.width/2 - trap_len/2;
-    trap.y = screen.height/2 - trap_len/2;
+    trap.width = screen.width/5;
+    trap.height = screen.height/5;
+    trap.x = (int) (screen.width/2 - trap.width/2);
+    trap.y = (int) (screen.height/2 - trap.height/2);
     player.x -= (old_screen.width - screen.width) / 2;
     player.y -= (old_screen.height - screen.height) / 2;
     map_coord.x -= (old_screen.width - screen.width) / 2;
@@ -177,6 +178,21 @@ void move_map(Vector2 *map, Cardinal direction, const int speed, const float DT)
     }
 }
 
+float vector_angle(Vector2 base, Vector2 point)
+{
+    float x = point.x - base.x;
+    float y = point.y - base.y;
+    int pad = 0;
+    if (x < 0 && y <= 0) {
+        pad = 180;
+    } else if (x < 0 && y >= 0) {
+        pad = 180;
+    } else if (x >= 0 && y >= 0) {
+        pad = 360;
+    }
+    return ABS(pad - RAD_TO_DEG(atan(y / x)));
+}
+
 int main(void)
 {
     SetTraceLogLevel(LOG_ERROR);
@@ -197,7 +213,7 @@ int main(void)
     while (!WindowShouldClose()) {
         BeginDrawing();
         {
-            ClearBackground(BLACK);
+            ClearBackground(LIME);
             const float DT = GetFrameTime();
 
             if (IsWindowResized())
@@ -207,16 +223,23 @@ int main(void)
                 Cardinal direction = snap_player_inside_trap(&player, trap);
                 move_map(&map_coord, direction, player_speed, DT);
             }
-            
+
+            // map
             DrawTextureEx(map, map_coord, 0.0f, map_factor, WHITE);
-            DrawTexture(
+
+            Vector2 mouse = GetMousePosition();
+            float angle = 450 - vector_angle((Vector2){player.x, player.y}, mouse);
+
+            // player
+            DrawTexturePro(
                 player_t,
-                player.x-player_t.width/2,
-                player.y-player_t.height/2,
-                WHITE
+                (Rectangle) {0, 0, player_t.width, player_t.height},
+                (Rectangle) {player.x, player.y, player_t.width, player_t.height},
+                (Vector2) {player_t.width/2, player_t.height/2},
+                angle, WHITE
             );
 
-            // DrawRectangleLinesEx(trap, 1, RED);
+            DrawRectangleLinesEx(trap, 1.0f, RED);
         }
         EndDrawing();
     }
