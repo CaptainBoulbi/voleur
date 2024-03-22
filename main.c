@@ -193,6 +193,19 @@ float vector_angle(Vector2 base, Vector2 point)
     return ABS(pad - RAD_TO_DEG(atan(y / x)));
 }
 
+Vec2i map_to_screen_coord(Vec2i coord)
+{
+    Vec2i r = {.x = map_coord.x + coord.x, .y = map_coord.y + coord.y};
+    return r;
+}
+
+Vec2i screen_to_map_coord(Vec2i coord)
+{
+    // Vec2i r = {.x = coord.x - map_coord.x, .y = coord.y - map_coord.y};
+    Vec2i r = {.x = -map_coord.x + coord.x, .y = -map_coord.y + coord.y};
+    return r;
+}
+
 int main(void)
 {
     SetTraceLogLevel(LOG_ERROR);
@@ -239,7 +252,7 @@ int main(void)
                 angle, WHITE
             );
 
-            DrawRectangleLinesEx(trap, 1.0f, RED);
+            // DrawRectangleLinesEx(trap, 1.0f, RED);
         }
         EndDrawing();
     }
