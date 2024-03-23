@@ -294,6 +294,10 @@ int main(void)
                 }
             }
 
+            if (IsMouseButtonPressed(MOUSE_BUTTON_RIGHT)) {
+                DrawLineEx((Vector2){.x = player.x, .y = player.y}, mouse, 5.0f, GOLD);
+            }
+
             // player
             DrawTexturePro(
                 player_t,
