@@ -263,7 +263,6 @@ int main(void)
             DrawTextureEx(map, map_coord, 0.0f, map_factor, WHITE);
 
             Vector2 mouse = GetMousePosition();
-            Vec2i mousei = (Vec2i) {.x=mouse.x, .y=mouse.y};
             float angle = vector_angle((Vector2){player.x, player.y}, mouse);
 
             Vec2i player_map = screen_to_map_coord(player);
