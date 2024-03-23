@@ -24,7 +24,7 @@ typedef struct Vec2i {
 } Vec2i;
 
 typedef struct Bullet {
-    Vec2i coord;
+    Vector2 coord;
     float angle;
     float lifetime;
 } Bullet;
@@ -89,7 +89,7 @@ int point_rec_collision(Vec2i point, Rectangle rec)
         (point.y >= rec.y && point.y <= rec.y + rec.height);
 }
 
-Vec2i move_forward_angle(Vec2i origin, float angle, float step)
+Vector2 move_forward_angle(Vector2 origin, float angle, float step)
 {
     float rad = DEG_TO_RAD(angle);
     origin.x += sin(rad) * step;
@@ -214,9 +214,9 @@ float vector_angle(Vector2 base, Vector2 point)
     return ABS(pad - RAD_TO_DEG(atan(y / x)));
 }
 
-Vec2i map_to_screen_coord(Vec2i coord)
+Vector2 map_to_screen_coord(Vector2 coord)
 {
-    Vec2i r = {.x = map_coord.x + coord.x, .y = map_coord.y + coord.y};
+    Vector2 r = {.x = map_coord.x + coord.x, .y = map_coord.y + coord.y};
     return r;
 }
 
@@ -282,7 +282,7 @@ int main(void)
                 Bullet *b = &bullets[i];
                 if (b->lifetime > 0.0f) {
                     b->lifetime -= DT;
-                    Vec2i co = map_to_screen_coord(b->coord);
+                    Vector2 co = map_to_screen_coord(b->coord);
                     DrawTexturePro(
                         bullet,
                         (Rectangle) {0, 0, bullet.width, bullet.height},
