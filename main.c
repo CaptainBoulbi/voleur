@@ -8,6 +8,9 @@
 #define ABS(a) ((a) < 0 ? -(a) : (a))
 
 #define RAD_TO_DEG(rad) (rad) * (180 / PI)
+#define DEG_TO_RAD(deg) (deg) / (180 / PI)
+
+#define NB_MAX_BULLET 5000
 
 typedef struct Vec2i {
     union {
@@ -19,6 +22,12 @@ typedef struct Vec2i {
         int height;
     };
 } Vec2i;
+
+typedef struct Bullet {
+    Vec2i coord;
+    float angle;
+    float lifetime;
+} Bullet;
 
 typedef enum Cardinal {
     CARDINAL_BEGIN_NOT_AT_ZERO = 0,
@@ -54,6 +63,10 @@ Texture map;
 Vector2 map_coord;
 const float map_factor = 2.0f;
 
+Texture bullet;
+Bullet bullets[NB_MAX_BULLET];
+int bullet_index = 0;
+
 void handle_resize_window(void)
 {
     Vec2i old_screen = screen;
@@ -74,6 +87,14 @@ int point_rec_collision(Vec2i point, Rectangle rec)
     return
         (point.x >= rec.x && point.x <= rec.x + rec.width) &&
         (point.y >= rec.y && point.y <= rec.y + rec.height);
+}
+
+Vec2i move_forward_angle(Vec2i origin, float angle, float step)
+{
+    float rad = DEG_TO_RAD(angle);
+    origin.x += sin(rad) * step;
+    origin.y += cos(rad) * step;
+    return origin;
 }
 
 int move_player_inside_trap(Vec2i *player, Rectangle trap,
@@ -201,7 +222,6 @@ Vec2i map_to_screen_coord(Vec2i coord)
 
 Vec2i screen_to_map_coord(Vec2i coord)
 {
-    // Vec2i r = {.x = coord.x - map_coord.x, .y = coord.y - map_coord.y};
     Vec2i r = {.x = -map_coord.x + coord.x, .y = -map_coord.y + coord.y};
     return r;
 }
@@ -220,6 +240,8 @@ int main(void)
         screen.width/2 - map.width*map_factor/2,
         screen.height/2 - map.height*map_factor/2,
     };
+
+    bullet = LoadTexture("data/bullet.png");
 
     handle_resize_window();
 
@@ -241,7 +263,37 @@ int main(void)
             DrawTextureEx(map, map_coord, 0.0f, map_factor, WHITE);
 
             Vector2 mouse = GetMousePosition();
-            float angle = 450 - vector_angle((Vector2){player.x, player.y}, mouse);
+            Vec2i mousei = (Vec2i) {.x=mouse.x, .y=mouse.y};
+            float angle = vector_angle((Vector2){player.x, player.y}, mouse);
+
+            Vec2i player_map = screen_to_map_coord(player);
+
+            if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
+                bullets[bullet_index] = (Bullet) {
+                    .coord.x = player_map.x,
+                    .coord.y = player_map.y,
+                    .angle = -angle,
+                    .lifetime = 5.0f,
+                };
+
+                bullet_index = (bullet_index + 1) % NB_MAX_BULLET;
+            }
+
+            for (int i=0; i<NB_MAX_BULLET; i++) {
+                Bullet *b = &bullets[i];
+                if (b->lifetime > 0.0f) {
+                    b->lifetime -= DT;
+                    Vec2i co = map_to_screen_coord(b->coord);
+                    DrawTexturePro(
+                        bullet,
+                        (Rectangle) {0, 0, bullet.width, bullet.height},
+                        (Rectangle) {co.x, co.y, bullet.width, bullet.height},
+                        (Vector2) {bullet.width/2, bullet.height/2},
+                        b->angle, WHITE
+                    );
+                    b->coord = move_forward_angle(b->coord, 90-b->angle, 50.0f);
+                }
+            }
 
             // player
             DrawTexturePro(
@@ -249,10 +301,8 @@ int main(void)
                 (Rectangle) {0, 0, player_t.width, player_t.height},
                 (Rectangle) {player.x, player.y, player_t.width, player_t.height},
                 (Vector2) {player_t.width/2, player_t.height/2},
-                angle, WHITE
+                450 - angle, WHITE
             );
-
-            // DrawRectangleLinesEx(trap, 1.0f, RED);
         }
         EndDrawing();
     }
