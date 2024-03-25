@@ -226,6 +226,24 @@ Vec2i screen_to_map_coord(Vec2i coord)
     return r;
 }
 
+Vec2i Vec2i_cast(Vector2 vec)
+{
+    Vec2i v =  {
+        .x = vec.x,
+        .y = vec.y
+    };
+    return v;
+}
+
+Vector2 Vector2_cast(Vec2i vec)
+{
+    Vector2 v =  {
+        .x = vec.x,
+        .y = vec.y
+    };
+    return v;
+}
+
 int main(void)
 {
     SetTraceLogLevel(LOG_ERROR);
@@ -269,8 +287,7 @@ int main(void)
 
             if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
                 bullets[bullet_index] = (Bullet) {
-                    .coord.x = player_map.x,
-                    .coord.y = player_map.y,
+                    .coord = move_forward_angle(Vector2_cast(player_map), angle + 90, player_t.width/2),
                     .angle = -angle,
                     .lifetime = 5.0f,
                 };
@@ -290,7 +307,7 @@ int main(void)
                         (Vector2) {bullet.width/2, bullet.height/2},
                         b->angle, WHITE
                     );
-                    b->coord = move_forward_angle(b->coord, 90-b->angle, 50.0f);
+                    b->coord = move_forward_angle(b->coord, 90-b->angle, 27.0f);
                 }
             }
 
