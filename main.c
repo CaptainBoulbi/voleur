@@ -285,9 +285,12 @@ int main(void)
 
             Vec2i player_map = screen_to_map_coord(player);
 
-            if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
+            if (IsMouseButtonDown(MOUSE_BUTTON_LEFT)) {
                 bullets[bullet_index] = (Bullet) {
-                    .coord = move_forward_angle(Vector2_cast(player_map), angle + 90, player_t.width/2),
+                    .coord = move_forward_angle(
+                        Vector2_cast(player_map),
+                        angle + 90, player_t.width/27
+                    ),
                     .angle = -angle,
                     .lifetime = 5.0f,
                 };
@@ -312,14 +315,21 @@ int main(void)
             }
 
             if (IsMouseButtonPressed(MOUSE_BUTTON_RIGHT)) {
-                DrawLineEx((Vector2){.x = player.x, .y = player.y}, mouse, 5.0f, GOLD);
+                DrawLineEx(
+                    (Vector2){.x = player.x, .y = player.y},
+                    mouse, 5.0f, GOLD
+                );
             }
 
             // player
             DrawTexturePro(
                 player_t,
-                (Rectangle) {0, 0, player_t.width, player_t.height},
-                (Rectangle) {player.x, player.y, player_t.width, player_t.height},
+                (Rectangle) {
+                    0, 0, player_t.width, player_t.height
+                },
+                (Rectangle) {
+                    player.x, player.y, player_t.width, player_t.height
+                },
                 (Vector2) {player_t.width/2, player_t.height/2},
                 450 - angle, WHITE
             );
