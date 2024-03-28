@@ -59,6 +59,7 @@ Vec2i player;
 const int player_radius = 25;
 const int player_speed = 5;
 
+Image map_collision;
 Texture map;
 Vector2 map_coord;
 const float map_factor = 2.0f;
@@ -244,6 +245,24 @@ Vector2 Vector2_cast(Vec2i vec)
     return v;
 }
 
+int circle_collision(Image map, Vec2i coord, float radius)
+{
+    int count = 0;
+    for (
+        int x=MAX(0, MIN((coord.x-radius)/map_factor, map.width-1));
+        x<MAX(0, MIN((coord.x+radius)/map_factor, map.width-1));
+        x++) {
+        for (
+            int y=MAX(0, MIN((coord.y-radius)/map_factor, map.height-1));
+            y<MAX(0, MIN((coord.y+radius)/map_factor, map.height-1));
+            y++) {
+            Color c = *(Color*)(map.data + sizeof(c)*map.width*y + sizeof(c)*x);
+            count += c.r == 255 && c.b == 255 && c.g == 255 && c.a == 255;
+        }
+    }
+    return count;
+}
+
 int main(void)
 {
     SetTraceLogLevel(LOG_ERROR);
@@ -253,7 +272,9 @@ int main(void)
 
     player = (Vec2i) {.x = screen.width/2, .y = screen.height/2};
     player_t = LoadTexture("data/player.png");
-    map = LoadTexture("data/map2.png");
+    map_collision = LoadImage("data/map_collision.png");
+    map = LoadTexture("data/map_collision.png");
+    ImageFormat(&map_collision, PIXELFORMAT_UNCOMPRESSED_R8G8B8A8);
     map_coord = (Vector2){
         screen.width/2 - map.width*map_factor/2,
         screen.height/2 - map.height*map_factor/2,
@@ -272,24 +293,31 @@ int main(void)
             if (IsWindowResized())
                 handle_resize_window();
 
-            if (!move_player_inside_trap(&player, trap, player_speed, DT)) {
-                Cardinal direction = snap_player_inside_trap(&player, trap);
-                move_map(&map_coord, direction, player_speed, DT);
-            }
-
             // map
             DrawTextureEx(map, map_coord, 0.0f, map_factor, WHITE);
 
             Vector2 mouse = GetMousePosition();
             float angle = vector_angle((Vector2){player.x, player.y}, mouse);
 
+            Vec2i old_player = player;
+            Vector2 old_map_coord = map_coord;
+            if (!move_player_inside_trap(&player, trap, player_speed, DT)) {
+                Cardinal direction = snap_player_inside_trap(&player, trap);
+                move_map(&map_coord, direction, player_speed, DT);
+            }
+
             Vec2i player_map = screen_to_map_coord(player);
 
-            if (IsMouseButtonDown(MOUSE_BUTTON_LEFT)) {
+            if (circle_collision(map_collision, player_map, player_radius)) {
+                player = old_player;
+                map_coord = old_map_coord;
+            }
+
+            if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
                 bullets[bullet_index] = (Bullet) {
                     .coord = move_forward_angle(
                         Vector2_cast(player_map),
-                        angle + 90, player_t.width/27
+                        angle + 90, player_radius
                     ),
                     .angle = -angle,
                     .lifetime = 5.0f,
@@ -311,6 +339,13 @@ int main(void)
                         b->angle, WHITE
                     );
                     b->coord = move_forward_angle(b->coord, 90-b->angle, 27.0f);
+
+                    int collision = circle_collision(
+                        map_collision, Vec2i_cast(b->coord), bullet.height/2
+                    );
+                    if (collision) {
+                        b->lifetime = -1.0f;
+                    }
                 }
             }
 
@@ -333,6 +368,8 @@ int main(void)
                 (Vector2) {player_t.width/2, player_t.height/2},
                 450 - angle, WHITE
             );
+
+            DrawCircleV(Vector2_cast(player), player_radius, BLUE);
         }
         EndDrawing();
     }
