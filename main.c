@@ -56,7 +56,7 @@ Rectangle trap;
 
 Texture player_t;
 Vec2i player;
-const int player_radius = 25;
+float player_radius;
 const int player_speed = 5;
 
 Image map_collision;
@@ -272,6 +272,7 @@ int main(void)
 
     player = (Vec2i) {.x = screen.width/2, .y = screen.height/2};
     player_t = LoadTexture("data/player.png");
+    player_radius = player_t.width/2;
     map_collision = LoadImage("data/map_collision.png");
     map = LoadTexture("data/map_collision.png");
     ImageFormat(&map_collision, PIXELFORMAT_UNCOMPRESSED_R8G8B8A8);
@@ -356,6 +357,8 @@ int main(void)
                 );
             }
 
+            DrawCircleV(Vector2_cast(player), player_radius, BLUE);
+
             // player
             DrawTexturePro(
                 player_t,
@@ -368,8 +371,6 @@ int main(void)
                 (Vector2) {player_t.width/2, player_t.height/2},
                 450 - angle, WHITE
             );
-
-            DrawCircleV(Vector2_cast(player), player_radius, BLUE);
         }
         EndDrawing();
     }
